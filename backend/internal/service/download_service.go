@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -10,8 +11,8 @@ import (
 // GenerateDownloadURL simulates generating a pre-signed URL for a digital product.
 // In a real application, this would interact with an object storage service (e.g., AWS S3, Cloudflare R2)
 // to generate a time-limited pre-signed URL for the given fileKey.
-func GenerateDownloadURL(productID int64) (string, error) {
-	product, err := database.GetProductByID(productID)
+func GenerateDownloadURL(ctx context.Context, productID int64) (string, error) {
+	product, err := database.GetProductByID(ctx, productID)
 	if err != nil {
 		return "", err
 	}

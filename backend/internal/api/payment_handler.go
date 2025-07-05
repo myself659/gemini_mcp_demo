@@ -1,7 +1,9 @@
 package api
 
 import (
+	"context"
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"ip-store/backend/internal/service"
@@ -22,7 +24,10 @@ func PaymentWebhookHandler(c *gin.Context) {
 	// In a real application, you would verify the webhook signature here
 	// to ensure it's from a legitimate payment gateway.
 
-	err := service.ProcessPaymentWebhook(req.OrderID, req.Status)
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
+	defer cancel()
+
+	err := service.ProcessPaymentWebhook(ctx, req.OrderID, req.Status)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return

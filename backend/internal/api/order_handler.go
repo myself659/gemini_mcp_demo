@@ -1,8 +1,10 @@
 package api
 
 import (
+	"context"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"ip-store/backend/internal/model"
@@ -19,7 +21,10 @@ func CreateOrderHandler(c *gin.Context) {
 	userID, _ := c.Get("userID")
 	order.UserID = userID.(int64)
 
-	orderID, err := service.CreateOrder(&order)
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
+	defer cancel()
+
+	orderID, err := service.CreateOrder(ctx, &order)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -35,7 +40,10 @@ func GetOrderHandler(c *gin.Context) {
 		return
 	}
 
-	order, err := service.GetOrderByID(id)
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
+	defer cancel()
+
+	order, err := service.GetOrderByID(ctx, id)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Order not found"})
 		return
@@ -53,7 +61,10 @@ func GetOrderHandler(c *gin.Context) {
 func GetOrdersHandler(c *gin.Context) {
 	userID, _ := c.Get("userID")
 
-	orders, err := service.GetOrdersByUserID(userID.(int64))
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
+	defer cancel()
+
+	orders, err := service.GetOrdersByUserID(ctx, userID.(int64))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return

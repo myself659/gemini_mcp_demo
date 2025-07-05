@@ -1,8 +1,10 @@
 package api
 
 import (
+	"context"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"ip-store/backend/internal/service"
@@ -17,7 +19,10 @@ func GetDownloadURLHandler(c *gin.Context) {
 
 	userID, _ := c.Get("userID")
 
-	order, err := service.GetOrderByID(orderID)
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
+	defer cancel()
+
+	order, err := service.GetOrderByID(ctx, orderID)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Order not found"})
 		return
@@ -30,7 +35,7 @@ func GetDownloadURLHandler(c *gin.Context) {
 	}
 
 	// Generate the download URL for the product in the order
-	downloadURL, err := service.GenerateDownloadURL(order.ProductID)
+	downloadURL, err := service.GenerateDownloadURL(ctx, order.ProductID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return

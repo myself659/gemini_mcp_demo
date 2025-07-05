@@ -1,17 +1,28 @@
 package api
 
 import (
-	"database/sql"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/gin-contrib/cors"
 
+	"ip-store/backend/internal/database"
 	"ip-store/backend/internal/service"
 )
 
 // SetupRouter configures the routes for the application.
-func SetupRouter(db *sql.DB) *gin.Engine {
+func SetupRouter(db *database.DBContext) *gin.Engine {
 	r := gin.Default()
+
+	// Configure CORS middleware
+	r.Use(cors.New(cors.Config{
+		AllowOrigins:     []string{"http://localhost:3000"}, // Allow your Next.js frontend origin
+		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowHeaders:     []string{"Origin", "Content-Type", "Accept", "Authorization"},
+		ExposeHeaders:    []string{"Content-Length"},
+		AllowCredentials: true,
+		MaxAge:           3600, // 1 hour
+	}))
 
 	// Health check endpoint
 	r.GET("/ping", func(c *gin.Context) {

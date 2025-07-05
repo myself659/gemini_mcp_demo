@@ -1,7 +1,9 @@
 package api
 
 import (
+	"context"
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"ip-store/backend/internal/service"
@@ -26,7 +28,10 @@ func (h *AuthHandler) RegisterHandler(c *gin.Context) {
 		return
 	}
 
-	user, err := h.userService.CreateUser(req.Email, req.Password)
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
+	defer cancel()
+
+	user, err := h.userService.CreateUser(ctx, req.Email, req.Password)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -46,50 +51,14 @@ func (h *AuthHandler) LoginHandler(c *gin.Context) {
 		return
 	}
 
-	token, err := h.userService.LoginUser(req.Email, req.Password)
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
+	defer cancel()
+
+	token, err := h.userService.LoginUser(ctx, req.Email, req.Password)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
 		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{"token": token})
-}
-
-type LoginRequest struct {
-	Email    string `json:"email" binding:"required,email"`
-	Password string `json:"password" binding:"required"`
-}
-
-// Login handles user login.
-func (h *AuthHandler) Login(c *gin.Context) {
-	var req LoginRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-
-	user, err := h.userService.GetUserByEmail(req.Email)
-	if err != nil {
-		if err == service.ErrUserNotFound {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
-			return
-		}
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to login"})
-		return
-	}
-
-	if err := h.userService.ComparePassword(user.PasswordHash, req.Password); err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
-		return
-	}
-
-	// TODO: Generate JWT token here
-	c.JSON(http.StatusOK, gin.H{
-		"message": "Login successful",
-		"user": gin.H{
-			"id":    user.ID,
-			"email": user.Email,
-		},
-		"token": "", // Placeholder for JWT
-	})
 }

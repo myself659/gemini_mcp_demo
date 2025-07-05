@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"database/sql"
 	"errors"
 	"time"
@@ -8,6 +9,7 @@ import (
 	"golang.org/x/crypto/bcrypt"
 
 	"ip-store/backend/internal/auth"
+	"ip-store/backend/internal/database"
 	"ip-store/backend/internal/model"
 )
 
@@ -17,17 +19,17 @@ var ( // Define common errors
 )
 
 type UserService struct {
-	db *sql.DB
+	db *database.DBContext
 }
 
-func NewUserService(db *sql.DB) *UserService {
+func NewUserService(db *database.DBContext) *UserService {
 	return &UserService{db: db}
 }
 
 // CreateUser creates a new user in the database.
-func (s *UserService) CreateUser(email, password string) (*model.User, error) {
+func (s *UserService) CreateUser(ctx context.Context, email, password string) (*model.User, error) {
 	// Check if user already exists
-	_, err := s.GetUserByEmail(email)
+	_, err := s.GetUserByEmail(ctx, email)
 	if err == nil {
 		return nil, ErrUserExists
 	}
@@ -48,7 +50,8 @@ func (s *UserService) CreateUser(email, password string) (*model.User, error) {
 	}
 
 	// Insert user into database
-	result, err := s.db.Exec(
+	result, err := s.db.ExecContext(
+		ctx,
 		"INSERT INTO users (email, password_hash, created_at) VALUES (?, ?, ?)",
 		user.Email,
 		user.PasswordHash,
@@ -68,9 +71,10 @@ func (s *UserService) CreateUser(email, password string) (*model.User, error) {
 }
 
 // GetUserByEmail retrieves a user by their email address.
-func (s *UserService) GetUserByEmail(email string) (*model.User, error) {
+func (s *UserService) GetUserByEmail(ctx context.Context, email string) (*model.User, error) {
 	user := &model.User{}
-	err := s.db.QueryRow(
+	err := s.db.QueryRowContext(
+		ctx,
 		"SELECT id, email, password_hash, created_at FROM users WHERE email = ?",
 		email,
 	).Scan(&user.ID, &user.Email, &user.PasswordHash, &user.CreatedAt)
@@ -90,8 +94,8 @@ func (s *UserService) ComparePassword(hashedPassword, password string) error {
 	return bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(password))
 }
 
-func (s *UserService) LoginUser(email, password string) (string, error) {
-	user, err := s.GetUserByEmail(email)
+func (s *UserService) LoginUser(ctx context.Context, email, password string) (string, error) {
+	user, err := s.GetUserByEmail(ctx, email)
 	if err != nil {
 		return "", err
 	}
