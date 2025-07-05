@@ -4,7 +4,6 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-
 	"ip-store/backend/internal/service"
 )
 
@@ -16,14 +15,12 @@ func NewAuthHandler(userService *service.UserService) *AuthHandler {
 	return &AuthHandler{userService: userService}
 }
 
-type RegisterRequest struct {
-	Email    string `json:"email" binding:"required,email"`
-	Password string `json:"password" binding:"required,min=6"`
-}
+func (h *AuthHandler) RegisterHandler(c *gin.Context) {
+	var req struct {
+		Email    string `json:"email" binding:"required,email"`
+		Password string `json:"password" binding:"required,min=8"`
+	}
 
-// Register handles user registration.
-func (h *AuthHandler) Register(c *gin.Context) {
-	var req RegisterRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -31,21 +28,31 @@ func (h *AuthHandler) Register(c *gin.Context) {
 
 	user, err := h.userService.CreateUser(req.Email, req.Password)
 	if err != nil {
-		if err == service.ErrUserExists {
-			c.JSON(http.StatusConflict, gin.H{"error": "User with this email already exists"})
-			return
-		}
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to register user"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusCreated, gin.H{
-		"message": "User registered successfully",
-		"user": gin.H{
-			"id":    user.ID,
-			"email": user.Email,
-		},
-	})
+	c.JSON(http.StatusOK, gin.H{"message": "User created successfully", "user_id": user.ID})
+}
+
+func (h *AuthHandler) LoginHandler(c *gin.Context) {
+	var req struct {
+		Email    string `json:"email" binding:"required,email"`
+		Password string `json:"password" binding:"required"`
+	}
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	token, err := h.userService.LoginUser(req.Email, req.Password)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"token": token})
 }
 
 type LoginRequest struct {

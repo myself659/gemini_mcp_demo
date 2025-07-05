@@ -4,6 +4,8 @@ import (
 	"database/sql"
 	"log"
 
+	"ip-store/backend/internal/model"
+
 	_ "modernc.org/sqlite"
 )
 
@@ -71,4 +73,13 @@ func createTables() {
 	if err != nil {
 		log.Fatalf("Could not create orders table: %v", err)
 	}
+}
+
+func GetUserByEmail(email string) (*model.User, error) {
+	user := &model.User{}
+	err := DB.QueryRow("SELECT id, email, password_hash, created_at FROM users WHERE email = ?", email).Scan(&user.ID, &user.Email, &user.PasswordHash, &user.CreatedAt)
+	if err != nil {
+		return nil, err
+	}
+	return user, nil
 }

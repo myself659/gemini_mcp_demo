@@ -27,8 +27,8 @@ func SetupRouter(db *sql.DB) *gin.Engine {
 	// Auth routes
 	authRoutes := r.Group("/api/auth")
 	{
-		authRoutes.POST("/register", authHandler.Register)
-		authRoutes.POST("/login", authHandler.Login)
+		authRoutes.POST("/register", authHandler.RegisterHandler)
+		authRoutes.POST("/login", authHandler.LoginHandler)
 	}
 
 	return r

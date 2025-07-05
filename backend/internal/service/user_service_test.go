@@ -109,3 +109,37 @@ func TestComparePassword(t *testing.T) {
 		t.Error("ComparePassword should have failed for incorrect password")
 	}
 }
+
+func TestLoginUser(t *testing.T) {
+	db := setupTestDB(t)
+	defer db.Close()
+
+	userService := NewUserService(db)
+
+	// Create a user first
+	_, err := userService.CreateUser("login@example.com", "loginpassword")
+	if err != nil {
+		t.Fatalf("Failed to create user for login test: %v", err)
+	}
+
+	// Test case 1: Successful login
+	token, err := userService.LoginUser("login@example.com", "loginpassword")
+	if err != nil {
+		t.Fatalf("LoginUser failed: %v", err)
+	}
+	if token == "" {
+		t.Error("Expected token to be non-empty")
+	}
+
+	// Test case 2: Incorrect password
+	_, err = userService.LoginUser("login@example.com", "wrongpassword")
+	if err == nil {
+		t.Error("Expected error for incorrect password")
+	}
+
+	// Test case 3: User not found
+	_, err = userService.LoginUser("nonexistent@example.com", "anypassword")
+	if err != ErrUserNotFound {
+		t.Errorf("Expected ErrUserNotFound, got %v", err)
+	}
+}

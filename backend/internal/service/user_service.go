@@ -7,6 +7,7 @@ import (
 
 	"golang.org/x/crypto/bcrypt"
 
+	"ip-store/backend/internal/auth"
 	"ip-store/backend/internal/model"
 )
 
@@ -87,4 +88,23 @@ func (s *UserService) GetUserByEmail(email string) (*model.User, error) {
 // ComparePassword compares a plaintext password with a hashed password.
 func (s *UserService) ComparePassword(hashedPassword, password string) error {
 	return bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(password))
+}
+
+func (s *UserService) LoginUser(email, password string) (string, error) {
+	user, err := s.GetUserByEmail(email)
+	if err != nil {
+		return "", err
+	}
+
+	err = s.ComparePassword(user.PasswordHash, password)
+	if err != nil {
+		return "", err
+	}
+
+	token, err := auth.GenerateToken(user.ID)
+	if err != nil {
+		return "", err
+	}
+
+	return token, nil
 }
