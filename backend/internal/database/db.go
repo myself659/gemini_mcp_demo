@@ -83,3 +83,78 @@ func GetUserByEmail(email string) (*model.User, error) {
 	}
 	return user, nil
 }
+
+func CreateProduct(product *model.Product) (int64, error) {
+	result, err := DB.Exec("INSERT INTO products (name, description, price, cover_image_url, file_key) VALUES (?, ?, ?, ?, ?)", product.Name, product.Description, product.Price, product.CoverImageURL, product.FileKey)
+	if err != nil {
+		return 0, err
+	}
+	return result.LastInsertId()
+}
+
+func GetProductByID(id int64) (*model.Product, error) {
+	product := &model.Product{}
+	err := DB.QueryRow("SELECT id, name, description, price, cover_image_url, file_key, created_at FROM products WHERE id = ?", id).Scan(&product.ID, &product.Name, &product.Description, &product.Price, &product.CoverImageURL, &product.FileKey, &product.CreatedAt)
+	if err != nil {
+		return nil, err
+	}
+	return product, nil
+}
+
+func GetAllProducts() ([]*model.Product, error) {
+	rows, err := DB.Query("SELECT id, name, description, price, cover_image_url, file_key, created_at FROM products")
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var products []*model.Product
+	for rows.Next() {
+		product := &model.Product{}
+		if err := rows.Scan(&product.ID, &product.Name, &product.Description, &product.Price, &product.CoverImageURL, &product.FileKey, &product.CreatedAt); err != nil {
+			return nil, err
+		}
+		products = append(products, product)
+	}
+	return products, nil
+}
+
+func CreateOrder(order *model.Order) (int64, error) {
+	result, err := DB.Exec("INSERT INTO orders (user_id, product_id, amount, status) VALUES (?, ?, ?, ?)", order.UserID, order.ProductID, order.Amount, order.Status)
+	if err != nil {
+		return 0, err
+	}
+	return result.LastInsertId()
+}
+
+func GetOrderByID(id int64) (*model.Order, error) {
+	order := &model.Order{}
+	err := DB.QueryRow("SELECT id, user_id, product_id, amount, status, created_at, paid_at FROM orders WHERE id = ?", id).Scan(&order.ID, &order.UserID, &order.ProductID, &order.Amount, &order.Status, &order.CreatedAt, &order.PaidAt)
+	if err != nil {
+		return nil, err
+	}
+	return order, nil
+}
+
+func GetOrdersByUserID(userID int64) ([]*model.Order, error) {
+	rows, err := DB.Query("SELECT id, user_id, product_id, amount, status, created_at, paid_at FROM orders WHERE user_id = ?", userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var orders []*model.Order
+	for rows.Next() {
+		order := &model.Order{}
+		if err := rows.Scan(&order.ID, &order.UserID, &order.ProductID, &order.Amount, &order.Status, &order.CreatedAt, &order.PaidAt); err != nil {
+			return nil, err
+		}
+		orders = append(orders, order)
+	}
+	return orders, nil
+}
+
+func UpdateOrderStatus(orderID int64, status string) error {
+	_, err := DB.Exec("UPDATE orders SET status = ?, paid_at = CURRENT_TIMESTAMP WHERE id = ?", status, orderID)
+	return err
+}

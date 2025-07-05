@@ -13,7 +13,7 @@ func main() {
 
 	r := api.SetupRouter(database.DB)
 	// Listen and Server in 0.0.0.0:8080
-	if err := r.Run(":8080"); err != nil {
+	if err := r.Run(":8081"); err != nil {
 		log.Fatalf("Server failed to start: %v", err)
 	}
 }
