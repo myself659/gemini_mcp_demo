@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { get } from "@/lib/api";
 import ProductCard from "@/components/shared/ProductCard";
 
@@ -43,6 +44,10 @@ export default function HomePage() {
   return (
     <div className="container mx-auto px-4 py-8">
       <h1 className="text-4xl font-bold text-center mb-8">Our Products</h1>
+      <div className="flex justify-center space-x-4 mb-8">
+        <Link href="/login" className="text-blue-500 hover:underline">Login</Link>
+        <Link href="/register" className="text-blue-500 hover:underline">Register</Link>
+      </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
         {products.map((product) => (
           <ProductCard
